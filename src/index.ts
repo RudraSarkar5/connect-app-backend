@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { env_config } from "./configVariable/envConfig";
 import user_route from './route/user'
 import errorMiddleware from "./middleware/error";
@@ -6,6 +7,8 @@ import connectDB from "./db/db_config";
 
 
 const app = express();
+
+app.use(cors());
 
 app.use(express.json());
 
