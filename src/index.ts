@@ -35,28 +35,27 @@ interface UserType {
     kilometers: number;
     meters: number;
   }
+
+  function deg2rad(deg: number): number {
+    return deg * (Math.PI / 180);
+  }
   
-  function calculateDistance(lat1: number, long1: number, lat2: number, long2: number): number {
-    const deg2rad = (deg: number): number => deg * (Math.PI / 180);
-
-    const theta = long1 - long2;
-
-    // Calculate the distance in radians using the Haversine formula
-    let dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) +
-               Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
-
-    dist = Math.acos(Math.min(Math.max(dist, -1.0), 1.0)); // Ensure the value is within the range [-1, 1]
-    dist = dist * (180 / Math.PI); // Convert radians to degrees
-
-    // Convert degrees to distance in miles
-    const miles = dist * 60 * 1.1515;
-
-    // Convert miles to meters
-    const kilometers = miles * 1.609344;
-    const meters = kilometers * 1000;
-
-    return meters;
-}
+  function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R: number = 6371; // Radius of the earth in km
+    const dLat: number = deg2rad(lat2 - lat1);  // deg2rad below
+    const dLon: number = deg2rad(lon2 - lon1); 
+    const a: number = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    ; 
+    const c: number = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+    const d: number = R * c; // Distance in km
+    return d * 1000;
+  }
+  
+  
+  
 
   
   // Function to find active users within a 10-meter radius
@@ -71,7 +70,7 @@ interface UserType {
             
             
             
-            const distance = calculateDistance(lat,lon,user.latitude,user.longitude);
+            const distance = getDistanceFromLatLonInKm(lat,lon,user.latitude,user.longitude);
             console.log(`Distance: ${distance.toFixed(2)} meters`);
            
           
