@@ -17,6 +17,18 @@ const userSchema = new Schema({
     required: true,
     trim: true,
   },
+  latitude: {
+    type: Number,
+    required: false,
+  },
+  longitude: {
+    type: Number,
+    required: false,
+  },
+  active: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
 });
