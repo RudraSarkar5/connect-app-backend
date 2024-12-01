@@ -26,43 +26,57 @@ interface UserType {
     active: boolean;
   }
   
-  // Haversine formula to calculate distance between two geographic coordinates
-  const getFlatDistance = (lat1:number, lon1:number, lat2:number, lon2:number) => {
-    const degreesToMeters = 111320; // Approximate meters per degree of latitude/longitude at the equator
-    const latDiff = lat2 - lat1;
-    const lonDiff = lon2 - lon1;
+
   
-    // Convert latitude to radians to calculate cosine
-    const avgLat = (lat1 + lat2) / 2;
-    const lonConversion = degreesToMeters * Math.cos(avgLat * Math.PI / 180);
+  interface DistanceResult {
+    miles: number;
+    feet: number;
+    yards: number;
+    kilometers: number;
+    meters: number;
+  }
   
-    // Calculate the flat distance using the Euclidean formula
-    const distance = Math.sqrt(Math.pow(latDiff * degreesToMeters, 2) + Math.pow(lonDiff * lonConversion, 2));
-  
-    return distance;
-  };
-  
-  
+  function calculateDistance(lat1: number, long1: number, lat2: number, long2: number): number {
+    const deg2rad = (deg: number): number => deg * (Math.PI / 180);
+
+    const theta = long1 - long2;
+
+    // Calculate the distance in radians using the Haversine formula
+    let dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) +
+               Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
+
+    dist = Math.acos(Math.min(Math.max(dist, -1.0), 1.0)); // Ensure the value is within the range [-1, 1]
+    dist = dist * (180 / Math.PI); // Convert radians to degrees
+
+    // Convert degrees to distance in miles
+    const miles = dist * 60 * 1.1515;
+
+    // Convert miles to meters
+    const kilometers = miles * 1.609344;
+    const meters = kilometers * 1000;
+
+    return meters;
+}
+
   
   // Function to find active users within a 10-meter radius
   const findNearbyUsers = async (email:string,lat: number, lon: number): Promise<string[]> => {
     try {
       const users: UserType[] = await User.find({ active: true }); // Get all active users
-      const nearbyUsers: string[] = []; // List to store emails of nearby users
+      const nearbyUsers:string[] = []; // List to store emails of nearby users
   
       users.forEach((user: UserType) => {
-        if (user.latitude && user.longitude) {
+        if (user.latitude && user.longitude && user.email !== email ) {
            
-
-            // const distance = haversineDistance(lat1, lon1, lat2, lon2);
-              const distance = getFlatDistance(lat, lon, user.latitude, user.longitude);
             
-          console.log("distance of them are : ",distance);
+            
+            
+            const distance = calculateDistance(lat,lon,user.latitude,user.longitude);
+            console.log(`Distance: ${distance.toFixed(2)} meters`);
+           
           
-  
-          if (distance <= 5 && user.email != email) { // If the distance is within 10 meters
-            nearbyUsers.push(user.email); // Add user's email to the list of nearby users
-          }
+           nearbyUsers.push(user.email); 
+        
         }
       });
   
@@ -96,14 +110,14 @@ wss.on('connection', (ws) => {
         const nearbyUsers = await findNearbyUsers(email,lat, lng);
   
         // Step 3: Send the list of nearby users back to the client
-        const responseMessage = {
-          type: 'nearbyUsers',
-          users: nearbyUsers // List of nearby user emails
-        };
+        // const responseMessage = {
+        //   type: 'nearbyUsers',
+        //   users: nearbyUsers // List of nearby user emails
+        // };
   
         // Send the response back to the client (the one who sent the location update)
         // ws.send(JSON.stringify(responseMessage));
-        console.log("the response messages are : ",responseMessage.users);
+        console.log("the response messages for ",email," are : ",nearbyUsers);
         
     }
     
